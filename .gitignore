@@ -1,0 +1,54 @@
+# ==========================
+# Entorno virtual
+# ==========================
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ==========================
+# Archivos de usuario y logs
+# ==========================
+*.log
+*.csv
+*.txt
+registro.csv
+
+# ==========================
+# Datos y modelos
+# ==========================
+data/
+evidencias/
+modelos/
+*.dat
+*.npy
+*.npz
+
+# ==========================
+# Archivos temporales / sistema
+# ==========================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.tmp
+
+# ==========================
+# IDEs
+# ==========================
+.idea/
+.vscode/
+*.iml
+
+# ==========================
+# Otros binarios / media
+# ==========================
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.mp4
+*.avi
