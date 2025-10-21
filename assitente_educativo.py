@@ -1,7 +1,7 @@
 import cv2
 import face_recognition as fr
 import os
-import numpy
+import numpy as np
 from datetime import datetime
 
 # Crear base de datos
@@ -10,12 +10,15 @@ mis_imagenes = []
 nombres_alumnos = []
 lista_archivos = os.listdir(ruta)
 
-for archivos in lista_archivos:
-    imagen_actual = cv2.imread(f"{ruta}/{archivos}")
+for archivo in lista_archivos:
+    imagen_actual = cv2.imread(f"{ruta}/{archivo}")
+    if imagen_actual is None:
+        print(f"No se pudo leer {archivo}, se omitirá.")
+        continue
     mis_imagenes.append(imagen_actual)
-    nombres_alumnos.append(os.path.splitext(archivos)[0])
+    nombres_alumnos.append(os.path.splitext(archivo)[0])
 
-print(nombres_alumnos)
+print(f"Estudiantes cargados:{nombres_alumnos}")
 
 #Codificar las imagenes
 def codificar(imagenes):
@@ -37,7 +40,7 @@ def codificar(imagenes):
 
 # Función para crear los registros
 def registrar_evento(tipo, persona, carpeta="data/registros"):
-    os.makedirs(f"{carpeta}/{tipo}", exist_ok=True)
+    os.makedirs(f"{carpeta}", exist_ok=True)
     archivo = os.path.join(carpeta, f"{tipo}.csv")
 
     #crea el registro si no existe
@@ -52,68 +55,74 @@ def registrar_evento(tipo, persona, carpeta="data/registros"):
 
 codigos_codificados = codificar(mis_imagenes)
 
-def capturar_rostro(accion, guardar_imagen=False):
-    # Tomar una imagen de camara web
-    captura = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-    # Leer imagen de la camara
-    exito, imagen = captura.read()
+def capturar_rostro(accion, lista_codificada, nombres):
+    print(f"Iniciando reconocimiento facial para {accion}:")
 
-    #si no puede capturar
-    if not exito:
-        print("No se ha podido tomar la captura")
+    camara = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    if not camara.isOpened():
+        print("No se pudo acceder a la cámara.")
+        return
 
-    # Reconocer cara en captura
-    cara_captura = fr.face_locations(imagen)
+    while True:
+        exito, frame = camara.read()
+        if not exito:
+            print("No se pudo leer el video.")
+            break
 
-    # Codificar cara capturada
-    cara_captura_codificada = fr.face_encodings(imagen, cara_captura)
+        # Reducir tamaño para acelerar
+        pequeño = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+        rgb = cv2.cvtColor(pequeño, cv2.COLOR_BGR2RGB)
 
-    # Buscar coincidencias | Doble loop
-    for cara_codif, cara_ubic in zip(cara_captura_codificada, cara_captura):
-        coincidencias = fr.compare_faces(lista_empleados_codificada, cara_codif)
-        distancias = fr.face_distance(lista_empleados_codificada, cara_codif)
+        # Detección y codificación
+        caras = fr.face_locations(rgb)
+        codigos = fr.face_encodings(rgb, caras)
 
-        print(distancias)
+        for (top, right, bottom, left), cara_codif in zip(caras, codigos):
+            distancias = fr.face_distance(lista_codificada, cara_codif)
+            if len(distancias) == 0:
+                continue
 
-        indice_coincidencia = numpy.argmin(distancias)
+            indice = np.argmin(distancias)
+            nombre = "Desconocido"
+            color = (0, 0, 255)
 
-        # Mostrar si existen coincidencias
-        if distancias[indice_coincidencia] > 0.6:
-            print("No coincide con ninguno de nuestro empleados")
-        else:
-            # Buscar el nombre del empleado encontrado
-            nombre = nombres_empleados[indice_coincidencia]
+            if distancias[indice] < 0.6:
+                nombre = nombres[indice]
+                color = (0, 255, 0)
+                registrar_evento(accion, nombre)
 
-            y1, x2, y2, x1 = cara_ubic
-            cv2.rectangle(imagen, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.rectangle(imagen, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
-            cv2.putText(imagen, nombre, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
+            # Escalar coordenadas
+            top *= 4
+            right *= 4
+            bottom *= 4
+            left *= 4
 
-            registrar_ingresos(nombre)
+            # Dibujar recuadro y nombre
+            cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
+            cv2.rectangle(frame, (left, bottom - 35), (right, bottom), color, cv2.FILLED)
+            cv2.putText(frame, nombre, (left + 6, bottom - 6), cv2.FONT_HERSHEY_DUPLEX, 1, (255, 255, 255), 1)
 
-            # Mostrar la imagen obtenida
-            cv2.imshow("Imagen web", imagen)
+        cv2.imshow("Asistente Educativo - Presiona 'q' para salir", frame)
 
-            # Mantener ventana abierta
-            cv2.waitKey(3000)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-            cv2.destroyAllWindows()
+    camara.release()
+    cv2.destroyAllWindows()
 
 
 # registrar la asistencia del alumno clase
 def control_asistencia():
     print("Control de asistencia iniciado...")
-    detectar_rostro("asistencia")
+    capturar_rostro("asistencia", codigos_codificados, nombres_alumnos)
 
-# registrar la asistencia del alumno examen
 def verificacion_examen():
     print("Verificación facial antes del examen...")
-    detectar_rostro("examen", guardar_foto=True)
+    capturar_rostro("examen", codigos_codificados, nombres_alumnos)
 
-# Ingreso a la biblioteca
 def acceso_biblioteca():
     print("Control de acceso a biblioteca/laboratorio...")
-    detectar_rostro("acceso")
+    capturar_rostro("acceso", codigos_codificados, nombres_alumnos)
 
 # Main
 if __name__ == "__main__":

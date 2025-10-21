@@ -1,6 +1,4 @@
-# ==========================
-# Entorno virtual
-# ==========================
+# --- ENTORNO VIRTUAL ---
 .venv/
 venv/
 env/
@@ -9,46 +7,39 @@ __pycache__/
 *.pyo
 *.pyd
 
-# ==========================
-# Archivos de usuario y logs
-# ==========================
+# --- ARCHIVOS DE CONFIGURACIÓN Y BUILD ---
+.vs/
+.idea/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+build/
+dist/
+*.spec
+
+# --- ARCHIVOS TEMPORALES ---
 *.log
-*.csv
-*.txt
-registro.csv
+*.tmp
+*.bak
 
-# ==========================
-# Datos y modelos
-# ==========================
-data/
-evidencias/
-modelos/
-*.dat
-*.npy
-*.npz
-
-# ==========================
-# Archivos temporales / sistema
-# ==========================
+# --- ARCHIVOS DEL SISTEMA ---
 .DS_Store
 Thumbs.db
-*.swp
-*.swo
-*.tmp
+desktop.ini
 
-# ==========================
-# IDEs
-# ==========================
-.idea/
-.vscode/
+# --- ARCHIVOS DEL PROYECTO QUE NO DEBERÍAN SUBIRSE ---
+data/registros/
+data/estudiantes/*.jpg
+data/estudiantes/*.jpeg
+data/estudiantes/*.png
+
+# --- DOCUMENTACIÓN LOCAL ---
+README.md
+
+# --- ARCHIVOS DE EJECUCIÓN DE WINDOWS ---
+*.exe
+*.dll
+
+# --- ARCHIVOS DE PYCHARM ---
 *.iml
-
-# ==========================
-# Otros binarios / media
-# ==========================
-*.jpg
-*.jpeg
-*.png
-*.bmp
-*.mp4
-*.avi
+.idea/
