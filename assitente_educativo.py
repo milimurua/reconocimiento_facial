@@ -56,9 +56,9 @@ def registrar_evento(tipo, persona, carpeta="data/registros"):
 codigos_codificados = codificar(mis_imagenes)
 
 def capturar_rostro(accion, lista_codificada, nombres):
-    print(f"Iniciando reconocimiento facial para {accion}:")
+    print(f"Iniciando reconocimiento facial para {accion}...")
+    camara = cv2.VideoCapture(0)
 
-    camara = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     if not camara.isOpened():
         print("No se pudo acceder a la cámara.")
         return
@@ -83,10 +83,13 @@ def capturar_rostro(accion, lista_codificada, nombres):
                 continue
 
             indice = np.argmin(distancias)
+            distancia = distancias[indice]
+            porcentaje = (1 - distancia) * 100  # cálculo simple
+
             nombre = "Desconocido"
             color = (0, 0, 255)
 
-            if distancias[indice] < 0.6:
+            if distancia < 0.6:
                 nombre = nombres[indice]
                 color = (0, 255, 0)
                 registrar_evento(accion, nombre)
@@ -97,19 +100,24 @@ def capturar_rostro(accion, lista_codificada, nombres):
             bottom *= 4
             left *= 4
 
-            # Dibujar recuadro y nombre
+            # Dibujar recuadro y texto
             cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
             cv2.rectangle(frame, (left, bottom - 35), (right, bottom), color, cv2.FILLED)
-            cv2.putText(frame, nombre, (left + 6, bottom - 6), cv2.FONT_HERSHEY_DUPLEX, 1, (255, 255, 255), 1)
+            cv2.putText(frame, f"{nombre} {porcentaje:.2f}%", (left + 6, bottom - 6),
+                        cv2.FONT_HERSHEY_DUPLEX, 1, (255, 255, 255), 1)
 
         cv2.imshow("Asistente Educativo - Presiona 'q' para salir", frame)
 
+        # Si se presiona 'q', salir del bucle
         if cv2.waitKey(1) & 0xFF == ord('q'):
+            print("Cerrando cámara...")
             break
 
+    # 🔹 Liberar cámara y cerrar ventanas
     camara.release()
     cv2.destroyAllWindows()
-
+    # 🔹 Requerido en macOS para evitar SIGTERM
+    cv2.waitKey(1)
 
 # registrar la asistencia del alumno clase
 def control_asistencia():
@@ -126,17 +134,24 @@ def acceso_biblioteca():
 
 # Main
 if __name__ == "__main__":
-    print("=== ASISTENTE EDUCATIVO ===")
-    print("1. Control de asistencia")
-    print("2. Verificación de examen")
-    print("3. Acceso a biblioteca/laboratorio")
-    opcion = input("Selecciona opción (1-3): ")
+    while True:
+        print("\n=== ASISTENTE EDUCATIVO ===")
+        print("1. Control de asistencia")
+        print("2. Verificación de examen")
+        print("3. Acceso a biblioteca/laboratorio")
+        print("4. Salir")
+        opcion = input("Selecciona opción (1-4): ")
 
-    if opcion == "1":
-        control_asistencia()
-    elif opcion == "2":
-        verificacion_examen()
-    elif opcion == "3":
-        acceso_biblioteca()
-    else:
-        print("Opción no válida.")
+        if opcion == "1":
+            control_asistencia()
+        elif opcion == "2":
+            verificacion_examen()
+        elif opcion == "3":
+            acceso_biblioteca()
+        elif opcion == "4":
+            print("Saliendo del sistema...")
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+            break
+        else:
+            print("Opción no válida. Intenta nuevamente.")
